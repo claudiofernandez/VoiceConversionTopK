@@ -33,7 +33,6 @@ def main(config):
     os.makedirs(model_save_dir, exist_ok=True)
     os.makedirs(sample_dir, exist_ok=True)
 
-
     # MlFlow Parameters
     mlruns_folder = os.path.join(output_directory, "mlruns")# "./mlruns"
     mlflow_experiment_name = "[19_09_2023] 1st Attempt Slurm"
