@@ -13,9 +13,30 @@ def main(config):
     # For fast training.
     cudnn.benchmark = True
 
+    # Create needed directories
+    if config.where_exec == "slurm":
+        train_data_dir = os.path.join(config.gnrl_data_dir, "data/mc/train")
+        test_data_dir = os.path.join(config.gnrl_data_dir, "data/mc/test")
+        wav_dir = os.path.join(config.gnrl_data_dir, "data/wav16")
+    elif config.where_exec == "local":
+        train_data_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/mc/train")
+        test_data_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/mc/test")
+        wav_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/wav16")
+
+    output_directory = os.path.join(config.gnrl_data_dir, "output")
+    os.makedirs(output_directory, exist_ok=True)
+
+    log_dir = os.path.join(output_directory, "logs")
+    model_save_dir = os.path.join(output_directory, "models")
+    sample_dir = os.path.join(output_directory, "samples")
+    os.makedirs(log_dir, exist_ok=True)
+    os.makedirs(model_save_dir, exist_ok=True)
+    os.makedirs(sample_dir, exist_ok=True)
+
+
     # MlFlow Parameters
-    mlruns_folder = "./mlruns"
-    mlflow_experiment_name = "[04_08_2023] Attempts to fix errors"
+    mlruns_folder = os.path.join(output_directory, "mlruns")# "./mlruns"
+    mlflow_experiment_name = "[19_09_2023] 1st Attempt Slurm"
     mlflow_run_name = "_".join([f"{key}_{value}".replace(":", "_")  for key, value in vars(config).items() if "dir" not in key and "speakers" not in key ]).split("_resume_iters")[0]#str(config)
     mlflow.set_tracking_uri(mlruns_folder)
     experiment = mlflow.set_experiment(mlflow_experiment_name)
@@ -26,26 +47,23 @@ def main(config):
         mlflow.log_param(key, value)
 
     # Create savedir subdirectories for current run
-    config.log_dir = os.path.join(config.log_dir, mlflow_run_name)
-    config.model_save_dir = os.path.join(config.model_save_dir, mlflow_run_name)
-    config.sample_dir = os.path.join(config.sample_dir, mlflow_run_name)
+    config.log_dir = os.path.join(log_dir, mlflow_run_name)
+    config.model_save_dir = os.path.join(model_save_dir, mlflow_run_name)
+    config.sample_dir = os.path.join(sample_dir, mlflow_run_name)
 
     # Create directories if not exist.
-    if not os.path.exists(config.log_dir):
-        os.makedirs(config.log_dir)
-    if not os.path.exists(config.model_save_dir):
-        os.makedirs(config.model_save_dir)
-    if not os.path.exists(config.sample_dir):
-        os.makedirs(config.sample_dir)
+    os.makedirs(config.log_dir, exist_ok=True)
+    os.makedirs(config.model_save_dir, exist_ok=True)
+    os.makedirs(config.sample_dir, exist_ok=True)
 
     # TODO: remove hard coding of 'test' speakers
     src_spk = config.speakers[0]
     trg_spk = config.speakers[1]
 
     # Data loader.
-    train_loader = get_loader(config.speakers, config.train_data_dir, config.batch_size, 'train', num_workers=config.num_workers)
+    train_loader = get_loader(config.speakers, train_data_dir, config.batch_size, 'train', num_workers=config.num_workers)
     # TODO: currently only used to output a sample whilst training
-    test_loader = TestDataset(config.speakers, config.test_data_dir, config.wav_dir, src_spk=src_spk, trg_spk=trg_spk)
+    test_loader = TestDataset(config.speakers, test_data_dir, wav_dir, src_spk=src_spk, trg_spk=trg_spk)
 
 
     # Solver for training and testing StarGAN.
@@ -76,7 +94,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_critic', type=int, default=5, help='number of D updates per each G update')
     parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for Adam optimizer')
     parser.add_argument('--beta2', type=float, default=0.999, help='beta2 for Adam optimizer')
-    parser.add_argument('--resume_iters', type=int, default=70000, help='resume training from this step')
+    parser.add_argument('--resume_iters', type=int, default=None, help='resume training from this step')
 
     # Test configuration.
     parser.add_argument('--test_iters', type=int, default=100000, help='test model from this step')
@@ -89,12 +107,8 @@ if __name__ == '__main__':
     #TODO: Crear variable "data_dir" general para los paths relativos "data_dir="../NASFolder/"
     #TODO: Input_Output_dir: "NASFolder"
     #TODO: Guardar y cambiar cosas a "os.path.join(data_dir, "ouputs") - Recordar hacer el MKDIR de outputs si no existe
-    parser.add_argument('--train_data_dir', type=str, default='E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/data/mc/train')
-    parser.add_argument('--test_data_dir', type=str, default='E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/data/mc/test')
-    parser.add_argument('--wav_dir', type=str, default="E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/data/wav16")
-    parser.add_argument('--log_dir', type=str, default='./logs')
-    parser.add_argument('--model_save_dir', type=str, default='./models')
-    parser.add_argument('--sample_dir', type=str, default='./samples')
+    parser.add_argument('--gnrl_data_dir', type=str, default='.')
+    parser.add_argument('--where_exec', type=str, default='local') # "slurm", "local"
     parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
                         default= ['p262', 'p272', 'p229', 'p232', 'p292', 'p293', 'p360', 'p361', 'p248', 'p251'])
 
