@@ -15,9 +15,9 @@ def main(config):
 
     # Create needed directories
     if config.where_exec == "slurm":
-        train_data_dir = os.path.join(config.gnrl_data_dir, "data/mc/train")
-        test_data_dir = os.path.join(config.gnrl_data_dir, "data/mc/test")
-        wav_dir = os.path.join(config.gnrl_data_dir, "data/wav16")
+        train_data_dir = os.path.join(os.getcwd(), "data/mc/train")
+        test_data_dir = os.path.join(os.getcwd(), "data/mc/test")
+        wav_dir = os.path.join(os.getcwd(), "data/wav16")
     elif config.where_exec == "local":
         train_data_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/mc/train")
         test_data_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/mc/test")
@@ -50,9 +50,10 @@ def main(config):
     config.model_save_dir = os.path.join(model_save_dir, mlflow_run_name)
     config.sample_dir = os.path.join(sample_dir, mlflow_run_name)
 
-    print(config.log_dir)
-    print(config.model_save_dir)
-    print(config.sample_dir)
+    print(os.getcwd())
+    print(train_data_dir)
+    print(test_data_dir)
+    print(wav_dir)
 
     # Create directories if not exist.
     os.makedirs(config.log_dir, exist_ok=True)
