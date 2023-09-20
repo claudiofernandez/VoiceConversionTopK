@@ -50,6 +50,10 @@ def main(config):
     config.model_save_dir = os.path.join(model_save_dir, mlflow_run_name)
     config.sample_dir = os.path.join(sample_dir, mlflow_run_name)
 
+    print(config.log_dir)
+    print(config.model_save_dir)
+    print(config.sample_dir)
+
     # Create directories if not exist.
     os.makedirs(config.log_dir, exist_ok=True)
     os.makedirs(config.model_save_dir, exist_ok=True)
