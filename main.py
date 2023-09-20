@@ -16,9 +16,9 @@ def main(config):
     print("Directories:", os.listdir(os.getcwd()))
     # Create needed directories
     if config.where_exec == "slurm":
-        train_data_dir = os.path.join("/workspace", "data/mc/train")
-        test_data_dir = os.path.join("/workspace", "data/mc/test")
-        wav_dir = os.path.join("/workspace", "data/wav16")
+        train_data_dir = os.path.join(config.gnrl_data_dir, "data/mc/train")
+        test_data_dir = os.path.join(config.gnrl_data_dir, "data/mc/test")
+        wav_dir = os.path.join(config.gnrl_data_dir, "data/wav16")
     elif config.where_exec == "local":
         train_data_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/mc/train")
         test_data_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/mc/test")
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     #TODO: Crear variable "data_dir" general para los paths relativos "data_dir="../NASFolder/"
     #TODO: Input_Output_dir: "NASFolder"
     #TODO: Guardar y cambiar cosas a "os.path.join(data_dir, "ouputs") - Recordar hacer el MKDIR de outputs si no existe
-    parser.add_argument('--gnrl_data_dir', type=str, default='..')
+    parser.add_argument('--gnrl_data_dir', type=str, default='/workspace/NASFolder')
     parser.add_argument('--where_exec', type=str, default='slurm') # "slurm", "local"
     parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
                         default= ['p262', 'p272', 'p229', 'p232', 'p292', 'p293', 'p360', 'p361', 'p248', 'p251'])
