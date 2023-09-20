@@ -110,8 +110,8 @@ if __name__ == '__main__':
     #TODO: Crear variable "data_dir" general para los paths relativos "data_dir="../NASFolder/"
     #TODO: Input_Output_dir: "NASFolder"
     #TODO: Guardar y cambiar cosas a "os.path.join(data_dir, "ouputs") - Recordar hacer el MKDIR de outputs si no existe
-    parser.add_argument('--gnrl_data_dir', type=str, default='.')
-    parser.add_argument('--where_exec', type=str, default='local') # "slurm", "local"
+    parser.add_argument('--gnrl_data_dir', type=str, default='..')
+    parser.add_argument('--where_exec', type=str, default='slurm') # "slurm", "local"
     parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
                         default= ['p262', 'p272', 'p229', 'p232', 'p292', 'p293', 'p360', 'p361', 'p248', 'p251'])
 
