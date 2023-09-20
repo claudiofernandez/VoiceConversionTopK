@@ -27,6 +27,7 @@ def main(config):
     output_directory = os.path.join(config.gnrl_data_dir, "output")
     os.makedirs(output_directory, exist_ok=True)
 
+
     log_dir = os.path.join(output_directory, "logs")
     model_save_dir = os.path.join(output_directory, "models")
     sample_dir = os.path.join(output_directory, "samples")
