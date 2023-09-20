@@ -15,9 +15,9 @@ def main(config):
 
     # Create needed directories
     if config.where_exec == "slurm":
-        train_data_dir = os.path.join(os.getcwd(), "data/mc/train")
-        test_data_dir = os.path.join(os.getcwd(), "data/mc/test")
-        wav_dir = os.path.join(os.getcwd(), "data/wav16")
+        train_data_dir = os.path.join("..", "data/mc/train")
+        test_data_dir = os.path.join("..", "data/mc/test")
+        wav_dir = os.path.join("..", "data/wav16")
     elif config.where_exec == "local":
         train_data_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/mc/train")
         test_data_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/mc/test")
