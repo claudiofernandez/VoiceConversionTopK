@@ -1,6 +1,6 @@
 import os
 import argparse
-from solver import Solver
+from solver import Solver, SolverCustom
 from data_loader import get_loader, TestDataset
 from torch.backends import cudnn
 import mlflow
@@ -67,14 +67,19 @@ def main(config):
     trg_spk = config.speakers[1]
 
     # Data loader.
-    train_loader = get_loader(config.speakers, train_data_dir, config.batch_size, 'train', num_workers=config.num_workers)
+    train_loader = get_loader(config.speakers, train_data_dir, config.batch_size, 'train',
+                              num_workers=config.num_workers, preload_data=config.preload_data )
     # TODO: currently only used to output a sample whilst training
     test_loader = TestDataset(config.speakers, test_data_dir, wav_dir, src_spk=src_spk, trg_spk=trg_spk)
 
 
     # Solver for training and testing StarGAN.
-    solver = Solver(train_loader, test_loader, config)
+    if config.preload_data:
+        solver = SolverCustom(train_loader, test_loader, config)
+    else:
+        solver = Solver(train_loader, test_loader, config)
 
+    # Train
     if config.mode == 'train':
         solver.train()
 
@@ -92,6 +97,7 @@ if __name__ == '__main__':
     parser.add_argument('--sampling_rate', type=int, default=16000, help='sampling rate')
 
     # Training configuration.
+    parser.add_argument('--preload_data', type=bool, default=True, help='preload data on RAM')
     parser.add_argument('--batch_size', type=int, default=32, help='mini-batch size')
     parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations for training D')
     parser.add_argument('--num_iters_decay', type=int, default=100000, help='number of iterations for decaying lr')
@@ -110,11 +116,8 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
 
     # Directories.
-    #TODO: Crear variable "data_dir" general para los paths relativos "data_dir="../NASFolder/"
-    #TODO: Input_Output_dir: "NASFolder"
-    #TODO: Guardar y cambiar cosas a "os.path.join(data_dir, "ouputs") - Recordar hacer el MKDIR de outputs si no existe
     parser.add_argument('--gnrl_data_dir', type=str, default='/workspace/NASFolder')
-    parser.add_argument('--where_exec', type=str, default='slurm') # "slurm", "local"
+    parser.add_argument('--where_exec', type=str, default='local') # "slurm", "local"
     parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
                         default= ['p262', 'p272', 'p229', 'p232', 'p292', 'p293', 'p360', 'p361', 'p248', 'p251'])
 
