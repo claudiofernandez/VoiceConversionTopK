@@ -37,7 +37,7 @@ def main(config):
 
     # MlFlow Parameters
     mlruns_folder = os.path.join(output_directory, "mlruns")# "./mlruns"
-    mlflow_experiment_name = "[19_09_2023] 1st Attempt Slurm"
+    mlflow_experiment_name = config.mlflow_experiment_name
     mlflow_run_name = "_".join([f"{key}_{value}".replace(":", "_")  for key, value in vars(config).items() if "dir" not in key and "speakers" not in key ]).split("_resume_iters")[0]#str(config)
     mlflow.set_tracking_uri(mlruns_folder)
     experiment = mlflow.set_experiment(mlflow_experiment_name)
@@ -97,6 +97,7 @@ if __name__ == '__main__':
     parser.add_argument('--sampling_rate', type=int, default=16000, help='sampling rate')
 
     # Training configuration.
+    parser.add_argument('--mlflow_experiment_name', type=str, default="[21_09_2023] 2nd A Slurm on RAM", help='Name for experiment in MLFlow')
     parser.add_argument('--preload_data', type=bool, default=True, help='preload data on RAM')
     parser.add_argument('--batch_size', type=int, default=32, help='mini-batch size')
     parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations for training D')
