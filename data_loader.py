@@ -107,8 +107,6 @@ class MyDatasetPreloaded(data.Dataset):
         for f in tqdm(self.mc_files):
             self.mc_filenames_loaded.append(f) # append filename
             spk = basename(f).split('_')[0] # extract spk
-            if spk == 'p361':
-                print("hola")
             self.mc_spks_loaded.append(spk) # append spk
             spk_idx = self.spk2idx[spk] # extract index of spk
             self.mc_spks2idxs_loaded.append(torch.LongTensor([spk_idx]).squeeze_().to('cuda')) # append idx of spk
