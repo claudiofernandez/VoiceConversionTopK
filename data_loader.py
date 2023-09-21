@@ -82,7 +82,6 @@ class MyDataset(data.Dataset):
 
         return torch.FloatTensor(mc), torch.LongTensor([spk_idx]).squeeze_(), torch.FloatTensor(spk_cat)
 
-
 class MyDatasetPreloaded(data.Dataset):
     """Dataset for MCEP features and speaker labels."""
 
