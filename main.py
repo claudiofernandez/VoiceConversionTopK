@@ -16,15 +16,16 @@ def main(config):
     print("Directories:", os.listdir(os.getcwd()))
     # Create needed directories
     if config.where_exec == "slurm":
-        train_data_dir = os.path.join(config.gnrl_data_dir, "data/mc/train")
-        test_data_dir = os.path.join(config.gnrl_data_dir, "data/mc/test")
-        wav_dir = os.path.join(config.gnrl_data_dir, "data/wav16")
+        config.gnrl_data_dir = '/workspace/NASFolder'
+        output_directory = os.path.join(config.gnrl_data_dir, "output")
     elif config.where_exec == "local":
-        train_data_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/mc/train")
-        test_data_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/mc/test")
-        wav_dir = os.path.join("E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/", "data/wav16")
+        config.gnrl_data_dir = "E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/"
+        output_directory = "./output"
 
-    output_directory = os.path.join(config.gnrl_data_dir, "output")
+    train_data_dir = os.path.join(config.gnrl_data_dir, "data/mc/train")
+    test_data_dir = os.path.join( config.gnrl_data_dir, "data/mc/test")
+    wav_dir = os.path.join( config.gnrl_data_dir, "data/wav16")
+
     os.makedirs(output_directory, exist_ok=True)
 
 
@@ -97,7 +98,7 @@ if __name__ == '__main__':
     parser.add_argument('--sampling_rate', type=int, default=16000, help='sampling rate')
 
     # Training configuration.
-    parser.add_argument('--mlflow_experiment_name', type=str, default="[21_09_2023] 2nd A Slurm on RAM", help='Name for experiment in MLFlow')
+    parser.add_argument('--mlflow_experiment_name', type=str, default="[21_09_2023] 2nd A Slurm on RAM Bien", help='Name for experiment in MLFlow')
     parser.add_argument('--preload_data', type=bool, default=True, help='preload data on RAM')
     parser.add_argument('--batch_size', type=int, default=32, help='mini-batch size')
     parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations for training D')
@@ -117,7 +118,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
 
     # Directories.
-    parser.add_argument('--gnrl_data_dir', type=str, default='/workspace/NASFolder')
+    parser.add_argument('--gnrl_data_dir', type=str, default='.')
     parser.add_argument('--where_exec', type=str, default='local') # "slurm", "local"
     parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
                         default= ['p262', 'p272', 'p229', 'p232', 'p292', 'p293', 'p360', 'p361', 'p248', 'p251'])
