@@ -3,6 +3,7 @@ import torch
 import glob
 from os.path import join, basename
 import numpy as np
+from tqdm import tqdm
 
 min_length = 256  # Since we slice 256 frames from each utterance when training.
 
@@ -43,16 +44,41 @@ class MyDataset(data.Dataset):
         self.prefix_length = len(self.speakers[0])
 
         mc_files = glob.glob(join(data_dir, '*.npy'))
-        mc_files = [i for i in mc_files if basename(i)[:self.prefix_length] in self.speakers]
-        self.mc_files = self.rm_too_short_utt(mc_files)
-        self.num_files = len(self.mc_files)
+        self.mc_files = [i for i in mc_files if basename(i)[:self.prefix_length] in self.speakers] # get only melceps from the required speakers
+        # self.mc_files = self.rm_too_short_utt(mc_files)
+        self.num_files = len(mc_files)
         print("\t Number of training samples: ", self.num_files)
-        for f in self.mc_files:
+
+        # Load MC Files on memory
+        print("Loading files to memory...")
+        self.mc_files_loaded = []
+        self.mc_filenames_loaded = []
+        self.mc_spks_loaded = []
+        self.mc_spks2idxs_loaded = []
+        self.mc_spks_cat_loaded = []
+        for f in tqdm(self.mc_files):
+            self.mc_filenames_loaded.append(f) # append filename
+            spk = basename(f).split('_')[0] # extract spk
+            if spk == 'p361':
+                print("hola")
+            self.mc_spks_loaded.append(spk) # append spk
+            spk_idx = self.spk2idx[spk] # extract index of spk
+            self.mc_spks2idxs_loaded.append(torch.LongTensor([spk_idx]).squeeze_().to('cuda')) # append idx of spk
+            spk_cat = np.squeeze(to_categorical([spk_idx], num_classes=len(self.speakers))) # spk idx to categorical
+            self.mc_spks_cat_loaded.append(torch.FloatTensor(spk_cat).to('cuda')) # append spk cat
+
+            # Load MCs
             mc = np.load(f)
-            if mc.shape[0] <= min_length:
-                print(f)
-                raise RuntimeError(
-                    f"The data may be corrupted! We need all MCEP features having more than {min_length} frames!")
+            mc = self.sample_seg(mc)
+            mc = np.transpose(mc, (1, 0))  # (T, D) -> (D, T), since pytorch need feature having shape
+            self.mc_files_loaded.append(torch.FloatTensor(mc).to('cuda'))
+
+            # if mc.shape[0] <= min_length:
+            #     print(f)
+            #     raise RuntimeError(
+            #         f"The data may be corrupted! We need all MCEP features having more than {min_length} frames!")
+        print("hola")
+
 
     def rm_too_short_utt(self, mc_files, min_length=min_length):
         new_mc_files = []
@@ -71,16 +97,20 @@ class MyDataset(data.Dataset):
         return self.num_files
 
     def __getitem__(self, index):
-        filename = self.mc_files[index]
-        spk = basename(filename).split('_')[0]
-        spk_idx = self.spk2idx[spk]
-        mc = np.load(filename)
-        mc = self.sample_seg(mc)
-        mc = np.transpose(mc, (1, 0))  # (T, D) -> (D, T), since pytorch need feature having shape
-        # to one-hot
-        spk_cat = np.squeeze(to_categorical([spk_idx], num_classes=len(self.speakers)))
 
-        return torch.FloatTensor(mc), torch.LongTensor([spk_idx]).squeeze_(), torch.FloatTensor(spk_cat)
+        return self.mc_files_loaded[index], self.mc_spks2idxs_loaded[index], self.mc_spks_cat_loaded[index]
+
+
+        # filename = self.mc_files[index]
+        # spk = basename(filename).split('_')[0]
+        # spk_idx = self.spk2idx[spk]
+        # mc = np.load(filename)
+        # mc = self.sample_seg(mc)
+        # mc = np.transpose(mc, (1, 0))  # (T, D) -> (D, T), since pytorch need feature having shape
+        # # to one-hot
+        # spk_cat = np.squeeze(to_categorical([spk_idx], num_classes=len(self.speakers)))
+        #
+        # return torch.FloatTensor(mc), torch.LongTensor([spk_idx]).squeeze_(), torch.FloatTensor(spk_cat)
 
 
 class TestDataset(object):
@@ -125,9 +155,73 @@ class TestDataset(object):
 
 def get_loader(speakers_using, data_dir, batch_size=32, mode='train', num_workers=1):
     dataset = MyDataset(speakers_using, data_dir)
-    data_loader = data.DataLoader(dataset=dataset,
-                                  batch_size=batch_size,
-                                  shuffle=(mode == 'train'),
-                                  num_workers=num_workers,
-                                  drop_last=True)
-    return data_loader
+    # data_loader = data.DataLoader(dataset=dataset,
+    #                               batch_size=batch_size,
+    #                               shuffle=(mode == 'train'),
+    #                               num_workers=num_workers,
+    #                               drop_last=True)
+
+    data_generator = DataGeneratorMCEPS(dataset=dataset,
+                                        batch_size=batch_size,
+                                        shuffle=True,
+                                        num_workers=num_workers)
+
+    return data_generator
+
+
+class DataGeneratorMCEPS(object):
+    def __init__(self, dataset, batch_size=32, shuffle=False, num_workers=0):
+
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.indexes = np.arange(len(self.dataset.mc_files_loaded))
+        self.shuffled_indices = None
+        #self._idx = 0
+        self._reset()
+
+    def __len__(self):
+        N = len(self.indexes)
+        b = self.batch_size
+        return N // b + bool(N % b)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+
+        # If dataset is completed, stop the Iterator
+        if self._idx >= len(self.dataset.mc_files_loaded):
+            self._reset()
+            raise StopIteration()
+
+        # Determine the indices for the current batch
+        start_idx = self._idx
+        end_idx = min(self._idx + self.batch_size, len(self.dataset.mc_files_loaded))
+        self._idx = end_idx
+
+        if self.shuffle:
+            # Extract the data for the current batch using the shuffled indices
+            batch_indices = self.shuffled_indices[start_idx:end_idx]
+        else:
+            # Extract the data for the current batch without shuffling
+            batch_indices = range(start_idx, end_idx)
+
+        batch_data = [self.dataset.mc_files_loaded[i] for i in batch_indices]
+        batch_spk2idxs = [self.dataset.mc_spks2idxs_loaded[i] for i in batch_indices]
+        batch_spk_cat = [self.dataset.mc_spks_cat_loaded[i] for i in batch_indices]
+
+        # You can further process the batch_data here if needed
+
+        return batch_data, batch_spk2idxs, batch_spk_cat
+
+    def _reset(self):
+        if self.shuffle:
+            # Create a shuffled index array once and shuffle all three lists using the same indices
+            num_samples = len(self.dataset.mc_files_loaded)
+            self.shuffled_indices = np.random.permutation(num_samples)
+
+        self._idx = 0
+
+
+# My problem is basically that this is nice because I have all the mcs, spk labels etc  preloaded in memory, but, as soon as I create the iterator
