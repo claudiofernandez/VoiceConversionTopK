@@ -39,7 +39,7 @@ def main(config):
     # MlFlow Parameters
     mlruns_folder = os.path.join(output_directory, "mlruns")# "./mlruns"
     mlflow_experiment_name = config.mlflow_experiment_name
-    mlflow_run_name = "_".join([f"{key}_{value}".replace(":", "_")  for key, value in vars(config).items() if "dir" not in key and "speakers" not in key ]).split("_resume_iters")[0]#str(config)
+    mlflow_run_name = "1st TopK" #"_".join([f"{key}_{value}".replace(":", "_")  for key, value in vars(config).items() if "dir" not in key and "speakers" not in key ]).split("_resume_iters")[0]#str(config)
     mlflow.set_tracking_uri(mlruns_folder)
     experiment = mlflow.set_experiment(mlflow_experiment_name)
     mlflow.start_run(run_name=mlflow_run_name)
@@ -91,6 +91,12 @@ def main(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
+    # TopK configuration.
+    parser.add_argument('--topk_training', type=bool, default=True, help='flag for running TopK Training')
+    parser.add_argument('--topk_gamma', type=float, default=0.9999, help='K decay in TopK')
+    parser.add_argument('--topk_v', type=float, default=0.5, help='minimum percentage of batch size for K')
+    parser.add_argument('--topk_from_iter', type=int, default=25000, help='iteration for starting to apply TopK Training')
+
     # Model configuration.
     parser.add_argument('--lambda_rec', type=float, default=10, help='weight for reconstruction loss')
     parser.add_argument('--lambda_gp', type=float, default=5, help='weight for gradient penalty')
@@ -98,7 +104,7 @@ if __name__ == '__main__':
     parser.add_argument('--sampling_rate', type=int, default=16000, help='sampling rate')
 
     # Training configuration.
-    parser.add_argument('--mlflow_experiment_name', type=str, default="[21_09_2023] 2nd A Slurm on RAM Bien", help='Name for experiment in MLFlow')
+    parser.add_argument('--mlflow_experiment_name', type=str, default="[21_09_2023] TopK 1st Try", help='Name for experiment in MLFlow')
     parser.add_argument('--preload_data', type=bool, default=True, help='preload data on RAM')
     parser.add_argument('--batch_size', type=int, default=32, help='mini-batch size')
     parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations for training D')
