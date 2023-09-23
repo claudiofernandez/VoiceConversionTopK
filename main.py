@@ -39,7 +39,26 @@ def main(config):
     # MlFlow Parameters
     mlruns_folder = os.path.join(output_directory, "mlruns")# "./mlruns"
     mlflow_experiment_name = config.mlflow_experiment_name
-    mlflow_run_name = "1st TopK" #"_".join([f"{key}_{value}".replace(":", "_")  for key, value in vars(config).items() if "dir" not in key and "speakers" not in key ]).split("_resume_iters")[0]#str(config)
+    key_substitutions = {
+        'sampling_rate': 'sr',
+        'topk_training': 'topk',
+        'topk_gamma': 'g',
+        'topk_from_iter': 'topk_fi',
+        'lambda_rec': 'lbd_rec',
+        'lambda_gp': 'lbd_rec',
+        'mlflow_experiment_name': 'exp_name',
+        'batch_size':'bs',
+        'num_iters': 'iters',
+        'num_iters_decay': 'iters_dec',
+        'beta1' : 'b1',
+        'beta2': 'b2'
+    }
+    config_dict = vars(config)
+    mlflow_run_name = "_".join([f"{key_substitutions.get(key, key)}_{value}".replace(":", "_")
+                                for key, value in config_dict.items()
+                                if "dir" not in key and "speakers" not in key
+                                and "preload_data" not in key]).split("_resume_iters")[0]
+
     mlflow.set_tracking_uri(mlruns_folder)
     experiment = mlflow.set_experiment(mlflow_experiment_name)
     mlflow.start_run(run_name=mlflow_run_name)
@@ -104,7 +123,7 @@ if __name__ == '__main__':
     parser.add_argument('--sampling_rate', type=int, default=16000, help='sampling rate')
 
     # Training configuration.
-    parser.add_argument('--mlflow_experiment_name', type=str, default="[21_09_2023] TopK 1st Try", help='Name for experiment in MLFlow')
+    parser.add_argument('--mlflow_experiment_name', type=str, default="[22_09_2023]_TopK_Local", help='Name for experiment in MLFlow')
     parser.add_argument('--preload_data', type=bool, default=True, help='preload data on RAM')
     parser.add_argument('--batch_size', type=int, default=32, help='mini-batch size')
     parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations for training D')
