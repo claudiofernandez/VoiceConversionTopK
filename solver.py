@@ -157,10 +157,16 @@ class SolverCustom(object):
     def topk_real_sigmoid(self, out_src, k):
         sigmoid_layer = torch.nn.Sigmoid()
         out_sigmoid = sigmoid_layer(out_src)
-        kth_largest = torch.topk(torch.reshape(out_sigmoid, [-1]), k, sorted=True)[0][-1]
-        topk_mask_out_src = torch.where(out_sigmoid < kth_largest, torch.zeros_like(out_sigmoid, dtype=torch.float32),
+
+        try:
+            kth_largest = torch.topk(torch.reshape(out_sigmoid, [-1]), k, sorted=True)[0][-1]
+
+            topk_mask_out_src = torch.where(out_sigmoid < kth_largest, torch.zeros_like(out_sigmoid, dtype=torch.float32),
                                         torch.ones_like(out_sigmoid, dtype=torch.float32))
-        topk_out_src = out_src * topk_mask_out_src  # vector solo con la probabilidad de los topk
+            topk_out_src = out_src * topk_mask_out_src  # vector solo con la probabilidad de los topk
+        except RuntimeError:
+            print("ERROR: FOUND A BATCH WITH ONLY 1 ELEMENT. ZEROING OUT THE GRADIENTS.")
+            topk_out_src = out_src
 
         return topk_out_src
 
