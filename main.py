@@ -123,7 +123,7 @@ if __name__ == '__main__':
     parser.add_argument('--sampling_rate', type=int, default=16000, help='sampling rate')
 
     # Training configuration.
-    parser.add_argument('--mlflow_experiment_name', type=str, default="[22_09_2023]_TopK_Local", help='Name for experiment in MLFlow')
+    parser.add_argument('--mlflow_experiment_name', type=str, default="[25_09_2023]_TopK_wlbd_id", help='Name for experiment in MLFlow')
     parser.add_argument('--preload_data', type=bool, default=True, help='preload data on RAM')
     parser.add_argument('--batch_size', type=int, default=32, help='mini-batch size')
     parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations for training D')
