@@ -299,9 +299,9 @@ class SolverCustom(object):
                     mlflow.log_metric("K_value", new_k, step=i)
 
 
-                # Backward and optimize.
-                if i > 10000:
-                    self.lambda_id = 0
+                # # Backward and optimize.
+                # if i > 10000:
+                #     self.lambda_id = 0
 
                 g_loss = g_loss_fake \
                     + self.lambda_rec * g_loss_rec \
