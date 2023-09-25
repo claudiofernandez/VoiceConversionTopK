@@ -625,8 +625,9 @@ class Solver(object):
                 g_loss_id = torch.mean(torch.abs(mc_real - mc_fake_id))
 
                 # Backward and optimize.
-                if i > 10000:
-                    self.lambda_id = 0
+                #TODO: Understand WHY STOP INCLUDING THE ID LOSS
+                # if i > 10000:
+                #     self.lambda_id = 0
 
                 g_loss = g_loss_fake \
                     + self.lambda_rec * g_loss_rec \
