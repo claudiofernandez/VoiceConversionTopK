@@ -40,12 +40,14 @@ def main(config):
     mlruns_folder = os.path.join(output_directory, "mlruns")# "./mlruns"
     mlflow_experiment_name = config.mlflow_experiment_name
     key_substitutions = {
+        'stargan_version': 'sgv',
         'sampling_rate': 'sr',
         'topk_training': 'topk',
         'topk_gamma': 'g',
         'topk_from_iter': 'topk_fi',
         'lambda_rec': 'lbd_rec',
         'lambda_gp': 'lbd_rec',
+        'lambda_cls': 'lbd_cls',
         'mlflow_experiment_name': 'exp_name',
         'batch_size':'bs',
         'num_iters': 'iters',
@@ -110,6 +112,9 @@ def main(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
+    # StarGAN version configuration.
+    parser.add_argument('--stargan_version', type=str, default='v1', help='Version of StarGAM-VC') # "v1", "v2"
+
     # TopK configuration.
     parser.add_argument('--topk_training', type=bool, default=False, help='flag for running TopK Training')
     parser.add_argument('--topk_gamma', type=float, default=0.9999, help='K decay in TopK')
@@ -120,6 +125,7 @@ if __name__ == '__main__':
     parser.add_argument('--lambda_rec', type=float, default=10, help='weight for reconstruction loss')
     parser.add_argument('--lambda_gp', type=float, default=5, help='weight for gradient penalty')
     parser.add_argument('--lambda_id', type=float, default=5, help='weight for id mapping loss')
+    parser.add_argument('--lambda_cls', type=float, default=10, help=' (StarGANv1)weight for domain classification loss')
     parser.add_argument('--sampling_rate', type=int, default=16000, help='sampling rate')
 
     # Training configuration.
