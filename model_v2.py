@@ -49,10 +49,10 @@ class ResidualBlock(nn.Module):
         return x
 
 
-class Generator(nn.Module):
+class Generator_v2(nn.Module):
     """Generator network."""
     def __init__(self, num_speakers=4):
-        super(Generator, self).__init__()
+        super(Generator_v2, self).__init__()
         # Down-sampling layers
         self.down_sample_1 = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=128, kernel_size=(3, 9), padding=(1, 4), bias=False),
@@ -144,10 +144,10 @@ class Generator(nn.Module):
         return x
 
 
-class Discriminator(nn.Module):
+class Discriminator_v2(nn.Module):
     """Discriminator network."""
     def __init__(self, num_speakers=10):
-        super(Discriminator, self).__init__()
+        super(Discriminator_v2, self).__init__()
 
         self.num_speakers = num_speakers
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
