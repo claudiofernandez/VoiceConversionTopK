@@ -112,13 +112,9 @@ if __name__ == '__main__':
 
     # TopK configuration.
     parser.add_argument('--topk_training', type=bool, default=False, help='flag for running TopK Training')
-
-    pre_config = parser.parse_args()
-
-    if pre_config.topk_training:
-        parser.add_argument('--topk_gamma', type=float, default=0.9999, help='K decay in TopK')
-        parser.add_argument('--topk_v', type=float, default=0.5, help='minimum percentage of batch size for K')
-        parser.add_argument('--topk_from_iter', type=int, default=25000, help='iteration for starting to apply TopK Training')
+    parser.add_argument('--topk_gamma', type=float, default=0.9999, help='K decay in TopK')
+    parser.add_argument('--topk_v', type=float, default=0.5, help='minimum percentage of batch size for K')
+    parser.add_argument('--topk_from_iter', type=int, default=25000, help='iteration for starting to apply TopK Training')
 
     # Model configuration.
     parser.add_argument('--lambda_rec', type=float, default=10, help='weight for reconstruction loss')
