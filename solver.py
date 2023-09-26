@@ -201,8 +201,8 @@ class SolverCustom(object):
         start_time = time.time()
 
         #Initialize starting value of K and minimum value v
+        k = self.batch_size  # k is initialized as the batch_size
         if self.topk_training == True:
-            k = self.batch_size  # k is initialized as the batch_size
             topk_v_value = int(self.topk_v * self.batch_size)
 
         for i in range(start_iters, self.num_iters):
