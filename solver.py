@@ -336,6 +336,16 @@ class SolverCustom(object):
                     mc_fake_id = self.generator(mc_real, spk_c_org)
                     g_loss_id = torch.mean(torch.abs(mc_real - mc_fake_id))
 
+                    # TopK Training of the Generator G
+                    if self.topk_training and i >= self.topk_from_iter:  # TopK Real/Fake training
+                        print("Starting TopK Real/Fake training with k = ", new_k)
+                        topk_out_src = self.topk_real_sigmoid(g_out_src, new_k)
+                        # g_loss_fake = - torch.mean(topk_out_src)
+                        g_loss_fake = torch.mean((1.0 - topk_out_src) ** 2)
+
+                        # Log value of K to MLFlow
+                        mlflow.log_metric("K_value", new_k, step=i)
+
                     # Compute total G loss
                     g_loss = g_loss_fake \
                         + self.lambda_rec * g_loss_rec \
@@ -355,6 +365,16 @@ class SolverCustom(object):
                     # Target-to-original domain.
                     mc_reconst = self.generator(mc_fake, spk_c_org)
                     g_loss_rec = torch.mean(torch.abs(mc_real - mc_reconst))
+
+                    # TopK Training of the Generator G
+                    if self.topk_training and i >= self.topk_from_iter:  # TopK Real/Fake training
+                        print("Starting TopK Real/Fake training with k = ", new_k)
+                        topk_out_src = self.topk_real_sigmoid(g_out_src, new_k)
+                        # g_loss_fake = - torch.mean(topk_out_src)
+                        g_loss_fake = torch.mean((1.0 - topk_out_src) ** 2)
+
+                        # Log value of K to MLFlow
+                        mlflow.log_metric("K_value", new_k, step=i)
 
                     # Compute total G loss
                     g_loss = g_loss_fake + self.lambda_rec * g_loss_rec + self.lambda_cls * g_loss_cls_spks
@@ -495,6 +515,12 @@ class Solver(object):
         self.model_save_step = config.model_save_step
         self.lr_update_step = config.lr_update_step
 
+        # TopK configurations.
+        self.topk_training = config.topk_training
+        self.topk_gamma = config.topk_gamma
+        self.topk_v = config.topk_v
+        self.topk_from_iter = config.topk_from_iter
+
         # Build the model and tensorboard.
         self.build_model(stargan_version=self.stargan_version)
 
@@ -593,6 +619,22 @@ class Solver(object):
         wav, _ = librosa.load(wavfile, sr=sr, mono=True)
         return wav_padding(wav, sr=16000, frame_period=5, multiple = 4)
 
+    def topk_real_sigmoid(self, out_src, k):
+        sigmoid_layer = torch.nn.Sigmoid()
+        out_sigmoid = sigmoid_layer(out_src)
+
+        try:
+            kth_largest = torch.topk(torch.reshape(out_sigmoid, [-1]), k, sorted=True)[0][-1]
+
+            topk_mask_out_src = torch.where(out_sigmoid < kth_largest, torch.zeros_like(out_sigmoid, dtype=torch.float32),
+                                        torch.ones_like(out_sigmoid, dtype=torch.float32))
+            topk_out_src = out_src * topk_mask_out_src  # vector solo con la probabilidad de los topk
+        except RuntimeError:
+            print("ERROR: FOUND A BATCH WITH ONLY 1 ELEMENT. ZEROING OUT THE GRADIENTS.")
+            topk_out_src = out_src
+
+        return topk_out_src
+
     def train(self):
         """Train StarGAN."""
         # Set data loader.
@@ -618,10 +660,32 @@ class Solver(object):
             start_iters = self.resume_iters
             self.restore_model(self.resume_iters)
 
+        # Initialize starting value of K and minimum value v
+        k = self.batch_size  # k is initialized as the batch_size
+        if self.topk_training == True:
+            topk_v_value = int(self.topk_v * self.batch_size)
+
         # Start training.
         print('Start training...')
         start_time = time.time()
         for i in range(start_iters, self.num_iters):
+            # =================================================================================== #
+            #                             0. Computing the new value of K                                #
+            # =================================================================================== #
+            if self.topk_training and i >= self.topk_from_iter:
+                # print("---epoch---", i)
+              # nonsense to reduce k in the first iterations, we start
+                tmp_k = self.topk_gamma * k  # reduce k by a decay factor gamma (here or inside the first if)
+                # tmp_k = topk_gamma * k #reduce k by a decay factor gamma (here or inside the first if)
+                k = tmp_k
+                new_k = round(tmp_k)
+                if new_k >= topk_v_value:
+                    new_k = new_k  # make sure that k its equal or higher than half of the batch size
+                else:
+                    new_k = topk_v_value
+            else:
+                new_k = k
+
             # =================================================================================== #
             #                             1. Preprocess input data                                #
             # =================================================================================== #
@@ -728,6 +792,16 @@ class Solver(object):
                     mc_fake_id = self.generator(mc_real, spk_c_org)
                     g_loss_id = torch.mean(torch.abs(mc_real - mc_fake_id))
 
+                    # TopK Training of the Generator G
+                    if self.topk_training and i >= self.topk_from_iter:  # TopK Real/Fake training
+                        print("Starting TopK Real/Fake training with k = ", new_k)
+                        topk_out_src = self.topk_real_sigmoid(g_out_src, new_k)
+                        # g_loss_fake = - torch.mean(topk_out_src)
+                        g_loss_fake = torch.mean((1.0 - topk_out_src) ** 2)
+
+                        # Log value of K to MLFlow
+                        mlflow.log_metric("K_value", new_k, step=i)
+
                     # Compute total G loss
                     g_loss = g_loss_fake \
                         + self.lambda_rec * g_loss_rec \
@@ -747,6 +821,16 @@ class Solver(object):
                     # Target-to-original domain.
                     mc_reconst = self.generator(mc_fake, spk_c_org)
                     g_loss_rec = torch.mean(torch.abs(mc_real - mc_reconst))
+
+                    # TopK Training of the Generator G
+                    if self.topk_training and i >= self.topk_from_iter:  # TopK Real/Fake training
+                        print("Starting TopK Real/Fake training with k = ", new_k)
+                        topk_out_src = self.topk_real_sigmoid(g_out_src, new_k)
+                        # g_loss_fake = - torch.mean(topk_out_src)
+                        g_loss_fake = torch.mean((1.0 - topk_out_src) ** 2)
+
+                        # Log value of K to MLFlow
+                        mlflow.log_metric("K_value", new_k, step=i)
 
                     # Compute total G loss
                     g_loss = g_loss_fake + self.lambda_rec * g_loss_rec + self.lambda_cls * g_loss_cls_spks
