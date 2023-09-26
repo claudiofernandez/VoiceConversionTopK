@@ -1,5 +1,5 @@
-from model import Generator
-from model import Discriminator
+from model_v2 import Generator_v2, Discriminator_v2
+from model_v1 import Generator_v1, Discriminator_v1
 import torch
 import torch.nn.functional as F
 from os.path import join, basename
@@ -23,10 +23,12 @@ class SolverCustom(object):
         self.sampling_rate = config.sampling_rate
 
         # Model configurations.
+        self.stargan_version = config.stargan_version
         self.num_speakers = config.num_speakers
         self.lambda_rec = config.lambda_rec
         self.lambda_gp = config.lambda_gp
         self.lambda_id = config.lambda_id
+        self.lambda_cls = config.lambda_cls
 
         # Training configurations.
         self.batch_size = config.batch_size
@@ -65,12 +67,21 @@ class SolverCustom(object):
         self.topk_from_iter = config.topk_from_iter
 
         # Build the model and tensorboard.
-        self.build_model()
+        self.build_model(stargan_version=self.stargan_version)
 
-    def build_model(self):
+        print("hola")
+
+    def build_model(self, stargan_version="v2"):
         """Create a generator and a discriminator."""
-        self.generator = Generator(num_speakers=self.num_speakers)
-        self.discriminator = Discriminator(num_speakers=self.num_speakers)
+
+        if stargan_version == "v2":
+            self.generator = Generator_v2(num_speakers=self.num_speakers)
+            self.discriminator = Discriminator_v2(num_speakers=self.num_speakers)
+        elif stargan_version == "v1":
+            self.generator = Generator_v1(num_speakers=self.num_speakers)
+            self.discriminator = Discriminator_v1(num_speakers=self.num_speakers)
+        else:
+            raise print("Specify the version of StarGAN-VC (v1 or v2).")
 
         self.g_optimizer = torch.optim.Adam(self.generator.parameters(), self.g_lr, [self.beta1, self.beta2])
         self.d_optimizer = torch.optim.Adam(self.discriminator.parameters(), self.d_lr, [self.beta1, self.beta2])
@@ -404,10 +415,13 @@ class Solver(object):
         self.sampling_rate = config.sampling_rate
 
         # Model configurations.
+        self.stargan_version = config.stargan_version
         self.num_speakers = config.num_speakers
         self.lambda_rec = config.lambda_rec
         self.lambda_gp = config.lambda_gp
         self.lambda_id = config.lambda_id
+        self.lambda_cls = config.lambda_cls
+
 
         # Training configurations.
         self.batch_size = config.batch_size
@@ -440,12 +454,20 @@ class Solver(object):
         self.lr_update_step = config.lr_update_step
 
         # Build the model and tensorboard.
-        self.build_model()
+        self.build_model(stargan_version=self.stargan_version)
 
-    def build_model(self):
+        print("hola")
+
+    def build_model(self,stargan_version="v2"):
         """Create a generator and a discriminator."""
-        self.generator = Generator(num_speakers=self.num_speakers)
-        self.discriminator = Discriminator(num_speakers=self.num_speakers)
+        if stargan_version == "v2":
+            self.generator = Generator_v2(num_speakers=self.num_speakers)
+            self.discriminator = Discriminator_v2(num_speakers=self.num_speakers)
+        elif stargan_version == "v1":
+            self.generator = Generator_v1(num_speakers=self.num_speakers)
+            self.discriminator = Discriminator_v1(num_speakers=self.num_speakers)
+        else:
+            raise print("Specify the version of StarGAN-VC (v1 or v2).")
 
         self.g_optimizer = torch.optim.Adam(self.generator.parameters(), self.g_lr, [self.beta1, self.beta2])
         self.d_optimizer = torch.optim.Adam(self.discriminator.parameters(), self.d_lr, [self.beta1, self.beta2])
@@ -585,26 +607,63 @@ class Solver(object):
             #                             2. Train the Discriminator                              #
             # =================================================================================== #
 
-            # Compute loss with real mc feats.
-            d_out_src = self.discriminator(mc_real, spk_c_trg, spk_c_org)
-            d_loss_real = torch.mean((1.0 - d_out_src) ** 2)
+            # Compute loss with REAL mc feats.
+            if self.stargan_version == "v2":
+                d_out_src = self.discriminator(mc_real, spk_c_trg, spk_c_org)
+                d_loss_real = torch.mean((1.0 - d_out_src) ** 2)
 
-            # Compute loss with fake mc feats.
+            elif self.stargan_version == "v1":
+                d_out_src, d_out_cls_spks = self.discriminator(mc_real)
+                d_loss_real = - torch.mean(d_out_src)
+                d_loss_cls_spks = self.classification_loss(d_out_cls_spks, spk_label_org)
+
+            # Compute loss with FAKE mc feats.
             mc_fake = self.generator(mc_real, spk_c_trg)
-            d_out_fake = self.discriminator(mc_fake.detach(), spk_c_org, spk_c_trg)
-            d_loss_fake = torch.mean(d_out_fake ** 2)
+
+            # StarGAN-VCv2
+            if self.stargan_version == "v2":
+                #TODO: Check why detach mc_fake
+                d_out_fake = self.discriminator(mc_fake.detach(), spk_c_org, spk_c_trg)
+                d_loss_fake = torch.mean(d_out_fake ** 2)
+
+                # Compute total D loss
+                # TODO: Why comment that
+                d_loss = d_loss_real + d_loss_fake  # + self.lambda_gp * d_loss_gp
+
+                # Logging.
+                loss = {}
+                loss['D/loss_real'] = d_loss_real.item()
+                loss['D/loss_fake'] = d_loss_fake.item()
+                loss['D/loss'] = d_loss.item()
+
+            # StarGAN-VCv1
+            elif self.stargan_version == "v1":
+                d_out_src, d_out_cls_spks = self.discriminator(mc_real)
+                d_loss_fake = torch.mean(d_out_src)
+
+                # Compute loss for gradient penalty.
+                alpha = torch.rand(mc_real.size(0), 1, 1, 1).to(self.device)
+                x_hat = (alpha * mc_real.data + (1 - alpha) * mc_fake.data).requires_grad_(True)
+                d_out_src, _ = self.discriminator(x_hat)
+                d_loss_gp = self.gradient_penalty(d_out_src, x_hat)
+
+                # Compute total D loss
+                d_loss = d_loss_real + d_loss_fake + self.lambda_cls * d_loss_cls_spks + self.lambda_gp * d_loss_gp
+
+                # Logging.
+                loss = {}
+                loss['D/loss_real'] = d_loss_real.item()
+                loss['D/loss_fake'] = d_loss_fake.item()
+                loss['D/loss_cls_spks'] = d_loss_cls_spks.item()
+                loss['D/loss_gp'] = d_loss_gp.item()
+                loss['D/loss'] = d_loss.item()
+
 
             # Backward and optimize.
-            d_loss = d_loss_real + d_loss_fake  # + self.lambda_gp * d_loss_gp
             self.reset_grad()
             d_loss.backward()
             self.d_optimizer.step()
 
-            # Logging.
-            loss = {}
-            loss['D/loss_real'] = d_loss_real.item()
-            loss['D/loss_fake'] = d_loss_fake.item()
-            loss['D/loss'] = d_loss.item()
 
             # =================================================================================== #
             #                               3. Train the generator                                #
@@ -613,35 +672,52 @@ class Solver(object):
             if (i+1) % self.n_critic == 0:
                 # Original-to-target domain.
                 mc_fake = self.generator(mc_real, spk_c_trg)
-                g_out_src = self.discriminator(mc_fake, spk_c_org, spk_c_trg)
-                g_loss_fake = torch.mean((1.0 - g_out_src) ** 2)
 
-                # Target-to-original domain. Cycle-consistent.
-                mc_reconst = self.generator(mc_fake, spk_c_org)
-                g_loss_rec = torch.mean(torch.abs(mc_real - mc_reconst))
+                # StarGAN-VCv2
+                if self.stargan_version == "v2":
+                    g_out_src = self.discriminator(mc_fake, spk_c_org, spk_c_trg)
+                    g_loss_fake = torch.mean((1.0 - g_out_src) ** 2)
 
-                # Original-to-original, Id mapping loss. Mapping
-                mc_fake_id = self.generator(mc_real, spk_c_org)
-                g_loss_id = torch.mean(torch.abs(mc_real - mc_fake_id))
+                    # Target-to-original domain. Cycle-consistent.
+                    mc_reconst = self.generator(mc_fake, spk_c_org)
+                    g_loss_rec = torch.mean(torch.abs(mc_real - mc_reconst))
 
-                # Backward and optimize.
-                #TODO: Understand WHY STOP INCLUDING THE ID LOSS
-                # if i > 10000:
-                #     self.lambda_id = 0
+                    # Original-to-original, Id mapping loss. Mapping
+                    mc_fake_id = self.generator(mc_real, spk_c_org)
+                    g_loss_id = torch.mean(torch.abs(mc_real - mc_fake_id))
 
-                g_loss = g_loss_fake \
-                    + self.lambda_rec * g_loss_rec \
-                    + self.lambda_id * g_loss_id
+                    # Compute total G loss
+                    g_loss = g_loss_fake \
+                        + self.lambda_rec * g_loss_rec \
+                        + self.lambda_id * g_loss_id
+
+                    # Logging.
+                    loss['G/loss_fake'] = g_loss_fake.item()
+                    loss['G/loss_rec'] = g_loss_rec.item()
+                    loss['G/loss_id'] = g_loss_id.item()
+                    loss['G/loss'] = g_loss.item()
+
+                elif self.stargan_version == "v1":
+                    g_out_src, g_out_cls_spks = self.discriminator(mc_fake)
+                    g_loss_fake = - torch.mean(g_out_src)
+                    g_loss_cls_spks = self.classification_loss(g_out_cls_spks, spk_label_trg)
+
+                    # Target-to-original domain.
+                    mc_reconst = self.generator(mc_fake, spk_c_org)
+                    g_loss_rec = torch.mean(torch.abs(mc_real - mc_reconst))
+
+                    # Compute total G loss
+                    g_loss = g_loss_fake + self.lambda_rec * g_loss_rec + self.lambda_cls * g_loss_cls_spks
+
+                    # Logging.
+                    loss['G/loss_fake'] = g_loss_fake.item()
+                    loss['G/loss_rec'] = g_loss_rec.item()
+                    loss['G/loss_cls_spks'] = g_loss_cls_spks.item()
+                    loss['G/loss'] = g_loss.item()
 
                 self.reset_grad()
                 g_loss.backward()
                 self.g_optimizer.step()
-
-                # Logging.
-                loss['G/loss_fake'] = g_loss_fake.item()
-                loss['G/loss_rec'] = g_loss_rec.item()
-                loss['G/loss_id'] = g_loss_id.item()
-                loss['G/loss'] = g_loss.item()
 
             for key, value in loss.items():
                 mlflow.log_metric(key, value, step=i)  # Log results to MLFlow
