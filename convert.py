@@ -7,7 +7,7 @@ import os
 from os.path import join, basename
 from shutil import copy
 from data_loader import to_categorical
-from model import Generator
+from model_v2 import Generator_v2
 from utils import world_decompose, pitch_conversion, world_encode_spectral_envelop, world_speech_synthesis, wav_padding
 
 
