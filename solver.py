@@ -289,7 +289,7 @@ class SolverCustom(object):
 
             # StarGAN-VCv1
             elif self.stargan_version == "v1":
-                d_out_src, d_out_cls_spks = self.discriminator(mc_real)
+                d_out_src, d_out_cls_spks = self.discriminator(mc_fake)
                 d_loss_fake = torch.mean(d_out_src)
 
                 # Compute loss for gradient penalty.
@@ -744,7 +744,7 @@ class Solver(object):
 
             # StarGAN-VCv1
             elif self.stargan_version == "v1":
-                d_out_src, d_out_cls_spks = self.discriminator(mc_real)
+                d_out_src, d_out_cls_spks = self.discriminator(mc_fake)
                 d_loss_fake = torch.mean(d_out_src)
 
                 # Compute loss for gradient penalty.
