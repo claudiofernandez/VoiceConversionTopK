@@ -62,7 +62,7 @@ def main(config):
     mlflow_run_name = "_".join([f"{key_substitutions.get(key, key)}_{value}".replace(":", "_")
                                 for key, value in config_dict.items()
                                 if "dir" not in key and "speakers" not in key
-                                and "preload_data" not in key]).split("_resume_iters")[0]
+                                and "preload_data" not in key and "mlflow_experiment_name" not in key]).split("_resume_iters")[0]
 
     mlflow.set_tracking_uri(mlruns_folder)
     experiment = mlflow.set_experiment(mlflow_experiment_name)
