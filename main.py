@@ -20,18 +20,21 @@ def main(config):
         output_directory = os.path.join(config.gnrl_data_dir, "output")
     elif config.where_exec == "local":
         config.gnrl_data_dir = "E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/"
-        output_directory = "./output"
+        output_directory = os.path.join("./output")
 
     train_data_dir = os.path.join(config.gnrl_data_dir, "data/mc/train")
     test_data_dir = os.path.join( config.gnrl_data_dir, "data/mc/test")
     wav_dir = os.path.join( config.gnrl_data_dir, "data/wav16")
 
     os.makedirs(output_directory, exist_ok=True)
+    os.makedirs(os.path.join(output_directory, "logs"), exist_ok=True)
+    os.makedirs(os.path.join(output_directory, "models"), exist_ok=True)
+    os.makedirs(os.path.join(output_directory, "samples"), exist_ok=True)
 
 
-    log_dir = os.path.join(output_directory, "logs")
-    model_save_dir = os.path.join(output_directory, "models")
-    sample_dir = os.path.join(output_directory, "samples")
+    log_dir = os.path.join(output_directory, "logs", config.mlflow_experiment_name)
+    model_save_dir = os.path.join(output_directory, "models", config.mlflow_experiment_name)
+    sample_dir = os.path.join(output_directory, "samples", config.mlflow_experiment_name)
     os.makedirs(log_dir, exist_ok=True)
     os.makedirs(model_save_dir, exist_ok=True)
     os.makedirs(sample_dir, exist_ok=True)
