@@ -51,7 +51,6 @@ def main(config):
         'lambda_rec': 'lbd_rec',
         'lambda_gp': 'lbd_rec',
         'lambda_cls': 'lbd_cls',
-        'mlflow_experiment_name': 'exp_name',
         'batch_size':'bs',
         'num_iters': 'iters',
         'num_iters_decay': 'iters_dec',
