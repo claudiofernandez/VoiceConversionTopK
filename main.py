@@ -155,7 +155,7 @@ if __name__ == '__main__':
 
     # Directories.
     parser.add_argument('--gnrl_data_dir', type=str, default='.')
-    parser.add_argument('--where_exec', type=str, default='local') # "slurm", "local"
+    parser.add_argument('--where_exec', type=str, default='local', help="slurm or local") # "slurm", "local"
     parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
                         default= ['p262', 'p272', 'p229', 'p232', 'p292', 'p293', 'p360', 'p361', 'p248', 'p251'])
 
