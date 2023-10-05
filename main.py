@@ -115,11 +115,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # StarGAN version configuration.
-    parser.add_argument('--stargan_version', type=str, default='v1', help='Version of StarGAM-VC') # "v1", "v2"
+    parser.add_argument('--stargan_version', type=str, default='v2', help='Version of StarGAM-VC') # "v1", "v2"
 
     # TopK configuration.
-    parser.add_argument('--topk_training', action='store_true', help='enable TopK Training')
-    parser.add_argument('--no-topk_training', dest='topk_training', action='store_false', help='disable TopK Training')
+    parser.add_argument('--topk_training', default=True, type=lambda x: (str(x).lower() == 'true'), help="Enable TopK training.")
     parser.add_argument('--topk_gamma', type=float, default=0.9999, help='K decay in TopK')
     parser.add_argument('--topk_v', type=float, default=0.5, help='minimum percentage of batch size for K')
     parser.add_argument('--topk_from_iter', type=int, default=25000, help='iteration for starting to apply TopK Training')
@@ -133,11 +132,9 @@ if __name__ == '__main__':
 
     # Training configuration.
     parser.add_argument('--mlflow_experiment_name', type=str, default="[27_09_2023]_TopK", help='Name for experiment in MLFlow')
-    parser.add_argument('--preload_data', action='store_true', help='preload data on RAM')
-    parser.add_argument('--no-preload_data', dest='preload_data', action='store_false',
-                        help='do not preload data on RAM')
+    parser.add_argument('--preload_data', default=True, type=lambda x: (str(x).lower() == 'true'), help="Load data on RAM memory.")
     parser.add_argument('--batch_size', type=int, default=32, help='mini-batch size')
-    parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations for training D')
+    parser.add_argument('--num_iters', type=int, default=100, help='number of total iterations for training D')
     parser.add_argument('--num_iters_decay', type=int, default=100000, help='number of iterations for decaying lr')
     parser.add_argument('--g_lr', type=float, default=0.0002, help='learning rate for G')
     parser.add_argument('--d_lr', type=float, default=0.0001, help='learning rate for D')
