@@ -75,11 +75,10 @@ def plot_metrics_dict(metrics_dict, show_plot=True):
     ax.set_ylabel('Mean MCD')
 
     # Plot the STD values as error bars
-    ax.errorbar(x, mean_mcd_values, yerr=std_values, fmt='o', label='STD')
+    ax.errorbar(x, mean_mcd_values, yerr=std_values, fmt='.k', label='STD', color="black")
 
-    # Set x-axis labels
-    ax.set_xticks(x)
-    ax.set_xticklabels(iterations)
+    # Rotate X-axis labels vertically
+    plt.xticks(x, iterations, rotation='vertical')
     ax.legend()
 
     # Display the plot
@@ -113,7 +112,7 @@ def main(config):
         print("Computing for vcto: " + str(vcto_conversion))
         metrics_dict[vcto_conversion] = dict.fromkeys(converted_wavs_files_dict[vcto_conversion].keys())
 
-        for iteration_n, iteration_n_files in converted_wavs_files_dict[vcto_conversion].items():
+        for iteration_n, iteration_n_files in tqdm(converted_wavs_files_dict[vcto_conversion].items()):
             print("-- Iteration: " + iteration_n, iteration_n_files)
             metrics_iteration_n = []
             for converted_wav in iteration_n_files:
@@ -166,40 +165,14 @@ if __name__ == '__main__':
     config = parser.parse_args()
     main(config)
 
-spks = ["p272", "p262", "p232", "p229"]
+    parser = argparse.ArgumentParser()
 
-original_wavs_dir = ""
+    # Directories.
+    parser.add_argument('--gnrl_data_dir', type=str, default='.')
+    parser.add_argument('--converted_samples_data_dir', type=str, default="Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output/samples/[30_09_2023]_TopK_v2/sgv_v2_topk_True_topk_g_0.9999_topk_v_0.5_topk_fi_25000_lbd_rec_10.0_lbd_rec_5.0_lambda_id_5.0_lbd_cls_10.0_sr_16000_bs_32_iters_200000_iters_dec_100000_g_lr_0.0001_d_lr_0.0001_n_critic_5_b1_0.5_b2_0.999")
+    parser.add_argument('--where_exec', type=str, default='local', help="slurm or local") # "slurm", "local"
+    parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
+                        default=["p272", "p262", "p232", "p229"])
 
-
-trg_dir = "/content/drive/MyDrive/audio_samples/target_original_samples"
-convert_dir = "/content/drive/MyDrive/audio_samples/sb_vanilla_samples"
-trg = "p272"
-spk_to_spk = "p262_to_p272"
-output_csv = "p262_to_p272.csv"
-
-trg_files = glob.glob(os.path.join(trg_dir, '*.wav'))
-vcto_files = glob.glob(os.path.join(convert_dir, '*' + '-vcto-'+ '*.wav'))
-print(vcto_files, trg_files)
-
-sample_rate = get_sampling_rate(trg_files[0])
-print(sample_rate)
-
-get_spk_world_feats(trg, trg_files, os.path.join(convert_dir, spk_to_spk), sample_rate)
-get_spk_world_feats('vcto', vcto_files, os.path.join(convert_dir, spk_to_spk), sample_rate)
-
-trg_npy_files = glob.glob(os.path.join(convert_dir, spk_to_spk, trg + '*.npy'))
-vcto_npy_files = glob.glob(os.path.join(convert_dir, spk_to_spk, '*-vcto-*.npy'))
-
-trg_npy_files.sort()
-vcto_npy_files.sort()
-
-print("MCD OF SAM BROUGHTON VANILLA")
-
-with open(os.path.join(convert_dir, output_csv), 'wt') as csv_f:
-  csv_w = csv.writer(csv_f, delimiter=',')
-  csv_w.writerow(['SPK_to_SPK', 'REFERENCE', 'SYNTHESIZED', 'MCD'])
-  for idx, ref in enumerate(trg_npy_files):
-    synth = vcto_npy_files[idx]
-    dist = mel_cep_dtw_dist(np.load(ref, allow_pickle=True), np.load(synth, allow_pickle=True))
-    print(f'MCD | {ref} to {synth} = {dist}')
-    csv_w.writerow([spk_to_spk, os.path.basename(ref), os.path.basename(synth), dist])
+    config = parser.parse_args()
+    main(config)
