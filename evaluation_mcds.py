@@ -4,12 +4,10 @@ import os
 import csv
 import glob
 import numpy as np
-import wave
-import pyworld
-import librosa
 from tqdm import tqdm
-from os.path import basename
 from utils import *
+import matplotlib.pyplot as plt
+
 
 def get_wavfiles_dict(speakers_list, parent_directory):
     # Create an empty dictionary to store the results
@@ -60,6 +58,34 @@ def get_convertedwavfiles_dict(speakers_list, parent_directory):
 
     return  converted_wav_files_dict
 
+def plot_metrics_dict(metrics_dict, show_plot=True):
+    # Extract the iteration numbers and their corresponding mean MCD and STD values
+    iterations = list(metrics_dict['p262-vcto-p272'].keys())
+    mean_mcd_values = [value[0] for value in metrics_dict['p262-vcto-p272'].values()]
+    std_values = [value[1] for value in metrics_dict['p262-vcto-p272'].values()]
+
+    # Create a bar plot
+    fig, ax = plt.subplots()
+    width = 0.35
+    x = range(len(iterations))
+
+    # Plot the mean MCD values
+    ax.bar(x, mean_mcd_values, width, label='Mean MCD')
+    ax.set_xlabel('Iterations')
+    ax.set_ylabel('Mean MCD')
+
+    # Plot the STD values as error bars
+    ax.errorbar(x, mean_mcd_values, yerr=std_values, fmt='o', label='STD')
+
+    # Set x-axis labels
+    ax.set_xticks(x)
+    ax.set_xticklabels(iterations)
+    ax.legend()
+
+    # Display the plot
+    plt.tight_layout()
+    plt.show()
+
 
 def main(config):
 
@@ -78,16 +104,50 @@ def main(config):
     converted_wavs_dir = config.converted_samples_data_dir
     converted_wavs_files_dict = get_convertedwavfiles_dict(speakers_list=config.speakers, parent_directory=converted_wavs_dir)
 
-    # Test
-    original_wavfile_path = os.path.join(original_wavs_dir, "p272", original_wavs_files_dict["p272"][5])
-    converted_wavfile_path = os.path.join(converted_wavs_dir, converted_wavs_files_dict["p262-vcto-p272"]["10000"][0])
+    # Iterate over conversions
+    metrics_dict = {}
+    metrics_dict = dict.fromkeys(converted_wavs_files_dict.keys()) # create dict to store metrics
+    for vcto_conversion in converted_wavs_files_dict.keys():
+        # Order dict first
 
-    mcd, penalty, frames = get_metrics_wavs(wav_file_1=original_wavfile_path, wav_file_2=converted_wavfile_path)
+        print("Computing for vcto: " + str(vcto_conversion))
+        metrics_dict[vcto_conversion] = dict.fromkeys(converted_wavs_files_dict[vcto_conversion].keys())
 
-    original_wavs_files = ""
+        for iteration_n, iteration_n_files in converted_wavs_files_dict[vcto_conversion].items():
+            print("-- Iteration: " + iteration_n, iteration_n_files)
+            metrics_iteration_n = []
+            for converted_wav in iteration_n_files:
+                wav_file_split = converted_wav.split("-")
+                iteration_n = wav_file_split[0]
+                org_spk = wav_file_split[1][:4]
+                target_spk = wav_file_split[-1][:4]
+                track_id =  wav_file_split[1][-3:]
+                converted_wavfile_path = os.path.join(converted_wavs_dir, converted_wav) # converted wav filepath
+
+                original_wavname = target_spk + "_" + track_id + ".wav"
+                original_wavfile_path = os.path.join(original_wavs_dir, target_spk, original_wavname) # original wav fielepath
+
+                # Compute MCD
+                mcd, penalty, frames = get_metrics_wavs(wav_file_1=original_wavfile_path,
+                                                        wav_file_2=converted_wavfile_path)
+                # Append to compute mean MCD
+                metrics_iteration_n.append(mcd)
+
+                print("MCD between " + original_wavname + " and " + converted_wav)
+                print(mcd, penalty, frames)
+
+            #Compute mean metrics and add to metrics dict
+            metrics_dict[vcto_conversion][iteration_n] = np.mean(np.array(metrics_iteration_n)), np.std(np.array(metrics_iteration_n))
 
 
+    # Sort the keys numerically
+    for vcto_conversion in metrics_dict.keys():
+        metrics_dict_vcto_sorted_keys = sorted(metrics_dict[vcto_conversion].keys(), key=lambda x: "{:0>10}".format(x)) # sort keys numerically naturally
+        metrics_dict[vcto_conversion] = {key: metrics_dict[vcto_conversion][key] for key in metrics_dict_vcto_sorted_keys}
 
+    # Plot the metrics in a bar diagram
+    plot_metrics_dict(metrics_dict, show_plot=True)
+    print("hola")
 
     # Convereted da
 
