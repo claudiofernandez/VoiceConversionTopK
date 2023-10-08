@@ -6,7 +6,7 @@ import glob
 import numpy as np
 from tqdm import tqdm
 from utils import *
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 
 def get_wavfiles_dict(speakers_list, parent_directory):
