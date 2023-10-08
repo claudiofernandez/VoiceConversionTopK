@@ -58,7 +58,7 @@ def get_convertedwavfiles_dict(speakers_list, parent_directory):
 
     return  converted_wav_files_dict
 
-def plot_metrics_dict(metrics_dict, show_plot=True):
+def plot_metrics_dict(metrics_dict, title, show_plot=True):
     # Extract the iteration numbers and their corresponding mean MCD and STD values
     iterations = list(metrics_dict['p262-vcto-p272'].keys())
     mean_mcd_values = [value[0] for value in metrics_dict['p262-vcto-p272'].values()]
@@ -82,6 +82,12 @@ def plot_metrics_dict(metrics_dict, show_plot=True):
     ax.legend()
 
     # Display the plot
+    # Create a title and split it into multiple lines if too lone
+    max_line_length = 60  # Adjust this value as needed
+    title_lines = [title[i:i + max_line_length] for i in range(0, len(title), max_line_length)]
+    title_text = '\n'.join(title_lines)
+    plt.title(title_text)
+
     plt.tight_layout()
     plt.show()
 
@@ -94,6 +100,9 @@ def main(config):
         output_directory = os.path.join(config.gnrl_data_dir, "output")
     elif config.where_exec == "local":
         config.gnrl_data_dir = "E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/"
+
+    # Get run name
+    run_name = config.converted_samples_data_dir.split("/")[-1]
 
     # Get original data directory
     original_wavs_dir = os.path.join(config.gnrl_data_dir, "data/wav16") #)"data/mcs"
@@ -128,7 +137,8 @@ def main(config):
 
                 # Compute MCD
                 mcd, penalty, frames = get_metrics_wavs(wav_file_1=original_wavfile_path,
-                                                        wav_file_2=converted_wavfile_path)
+                                                        wav_file_2=converted_wavfile_path,
+                                                        n_mfcc=36)
                 # Append to compute mean MCD
                 metrics_iteration_n.append(mcd)
 
@@ -145,7 +155,7 @@ def main(config):
         metrics_dict[vcto_conversion] = {key: metrics_dict[vcto_conversion][key] for key in metrics_dict_vcto_sorted_keys}
 
     # Plot the metrics in a bar diagram
-    plot_metrics_dict(metrics_dict, show_plot=True)
+    plot_metrics_dict(metrics_dict, title=run_name, show_plot=True)
     print("hola")
 
     # Convereted da
@@ -153,26 +163,23 @@ def main(config):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
 
-    # Directories.
-    parser.add_argument('--gnrl_data_dir', type=str, default='.')
-    parser.add_argument('--converted_samples_data_dir', type=str, default="Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output/samples/[30_09_2023]_TopK_v2/sgv_v2_topk_False_topk_g_0.9999_topk_v_0.5_topk_fi_25000_lbd_rec_10.0_lbd_rec_5.0_lambda_id_5.0_lbd_cls_10.0_sr_16000_bs_32_iters_200000_iters_dec_100000_g_lr_0.0001_d_lr_0.0001_n_critic_5_b1_0.5_b2_0.999")
-    parser.add_argument('--where_exec', type=str, default='local', help="slurm or local") # "slurm", "local"
-    parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
-                        default=["p272", "p262", "p232", "p229"])
+    # Folder storing the samples from the
+    experiment_folder = "Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output/samples/[5_10_2023]_TopK_v1"
 
-    config = parser.parse_args()
-    main(config)
+    runs_folders = os.listdir(experiment_folder)
 
-    parser = argparse.ArgumentParser()
+    for run_folder in runs_folders:
 
-    # Directories.
-    parser.add_argument('--gnrl_data_dir', type=str, default='.')
-    parser.add_argument('--converted_samples_data_dir', type=str, default="Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output/samples/[30_09_2023]_TopK_v2/sgv_v2_topk_True_topk_g_0.9999_topk_v_0.5_topk_fi_25000_lbd_rec_10.0_lbd_rec_5.0_lambda_id_5.0_lbd_cls_10.0_sr_16000_bs_32_iters_200000_iters_dec_100000_g_lr_0.0001_d_lr_0.0001_n_critic_5_b1_0.5_b2_0.999")
-    parser.add_argument('--where_exec', type=str, default='local', help="slurm or local") # "slurm", "local"
-    parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
-                        default=["p272", "p262", "p232", "p229"])
+        parser = argparse.ArgumentParser()
 
-    config = parser.parse_args()
-    main(config)
+        # Directories.
+        parser.add_argument('--gnrl_data_dir', type=str, default='.')
+        parser.add_argument('--converted_samples_data_dir', type=str, default=os.path.join(experiment_folder, run_folder))
+        parser.add_argument('--where_exec', type=str, default='local', help="slurm or local") # "slurm", "local"
+        parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
+                            default=["p272", "p262", "p232", "p229"])
+
+        config = parser.parse_args()
+        main(config)
+
