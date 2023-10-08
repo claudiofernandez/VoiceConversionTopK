@@ -69,12 +69,12 @@ def objective(trial):
     parser.add_argument('--test_iters', type=int, default=100000, help='test model from this step')
 
     # Miscellaneous.
-    parser.add_argument('--num_workers', type=int, default=200)
+    parser.add_argument('--num_workers', type=int, default=10)
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
 
     # Directories.
     parser.add_argument('--gnrl_data_dir', type=str, default='.')
-    parser.add_argument('--where_exec', type=str, default='local', help="slurm or local")  # "slurm", "local"
+    parser.add_argument('--where_exec', type=str, default='slurm', help="slurm or local")  # "slurm", "local"
     parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
                         default=['p262', 'p272', 'p229', 'p232'])
 
