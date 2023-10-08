@@ -17,8 +17,8 @@ def objective(trial):
     g_lr = trial.suggest_float("g_lr", 1e-5, 0.1, log=True)  # Adjust the range as needed
     d_lr = trial.suggest_float("d_lr", 1e-5, 0.1, log=True)  # Adjust the range as needed
     batch_size = trial.suggest_int("batch_size", 8, 128, log=True)  # Adjust the range as needed
-    #num_iters = trial.suggest_int("num_iters", 10000, 100000)  # Adjust the range as needed
-    num_iters = 10  # Adjust the range as needed
+    num_iters = trial.suggest_int("num_iters", 10000, 100000)  # Adjust the range as needed
+    #num_iters = 5  # Adjust the range as needed
     num_iters_decay = trial.suggest_int("num_iters_decay",  10000, 80000)  # Adjust the range as needed
     topk_from_iter = trial.suggest_int("topk_from_iter", 10000, 90000)  # Adjust the range as needed
     lambda_rec = trial.suggest_float("lambda_rec", 1e-2, 10.0, log=True)  # Adjust the range as needed
@@ -52,7 +52,7 @@ def objective(trial):
     parser.add_argument('--sampling_rate', type=int, default=16000, help='sampling rate')
 
     # Training configuration.
-    parser.add_argument('--mlflow_experiment_name', type=str, default="TopK HPSearch V1")
+    parser.add_argument('--mlflow_experiment_name', type=str, default="TopK HPSearch V2")
     parser.add_argument('--preload_data', default=True, type=lambda x: (str(x).lower() == 'true'),
                         help="Load data on RAM memory.")
     parser.add_argument('--batch_size', type=int, default=batch_size, help='mini-batch size')
@@ -158,7 +158,6 @@ def objective(trial):
     mlflow.set_tracking_uri(mlruns_folder)
     experiment = mlflow.set_experiment(mlflow_experiment_name)
     mlflow.start_run(run_name=mlflow_run_name)
-
     # Log Parameters
     for key, value in vars(config).items():
         mlflow.log_param(key, value)
@@ -203,13 +202,14 @@ def objective(trial):
 
 
 # Create an Optuna study with pruning enabled (MedianPruner)
+
 study = optuna.create_study(direction="minimize", pruner=optuna.pruners.MedianPruner())
 
 # Set the number of optimization trials
 n_trials = 100  # Adjust the number of trials as needed
 
 # Enable parallel execution by specifying the number of jobs (threads)
-n_jobs = 1  # Adjust the number of parallel jobs as needed
+n_jobs = 1 # Adjust the number of parallel jobs as needed
 
 # Run the optimization with parallelization
 study.optimize(objective, n_trials=n_trials, n_jobs=n_jobs)
