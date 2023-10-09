@@ -370,8 +370,8 @@ class SolverCustom(object):
                     if self.topk_training and i >= self.topk_from_iter:  # TopK Real/Fake training
                         print("Starting TopK Real/Fake training with k = ", new_k)
                         topk_out_src = self.topk_real_sigmoid(g_out_src, new_k)
-                        # g_loss_fake = - torch.mean(topk_out_src)
-                        g_loss_fake = torch.mean((1.0 - topk_out_src) ** 2)
+                        g_loss_fake = - torch.mean(topk_out_src)
+                        # g_loss_fake = torch.mean((1.0 - topk_out_src) ** 2)
 
                         # Log value of K to MLFlow
                         mlflow.log_metric("K_value", new_k, step=i)
@@ -796,8 +796,8 @@ class Solver(object):
                     if self.topk_training and i >= self.topk_from_iter:  # TopK Real/Fake training
                         print("Starting TopK Real/Fake training with k = ", new_k)
                         topk_out_src = self.topk_real_sigmoid(g_out_src, new_k)
-                        # g_loss_fake = - torch.mean(topk_out_src)
-                        g_loss_fake = torch.mean((1.0 - topk_out_src) ** 2)
+                        g_loss_fake = - torch.mean(topk_out_src)
+                        # g_loss_fake = torch.mean((1.0 - topk_out_src) ** 2)
 
                         # Log value of K to MLFlow
                         mlflow.log_metric("K_value", new_k, step=i)
