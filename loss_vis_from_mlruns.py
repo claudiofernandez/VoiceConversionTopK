@@ -95,72 +95,93 @@ def load_metrics(experiment_dir, experiment_id, run_id, metric_name):
     metric_file = os.path.join(metrics_dir, metric_name)
 
     steps, values = [], []
-    with open(metric_file, 'r') as file:
-        for line in file:
-            # Parse the line and extract step and value
-            parts = line.strip().split()
-            if len(parts) >= 2:
-                step = int(parts[2])  # Assuming the third item is the step/epoch number
-                value = float(parts[1])  # Assuming the second item is the metric value
-                steps.append(step)
-                values.append(value)
+    try:
+        with open(metric_file, 'r') as file:
+            for line in file:
+                # Parse the line and extract step and value
+                parts = line.strip().split()
+                if len(parts) >= 2:
+                    step = int(parts[2])  # Assuming the third item is the step/epoch number
+                    value = float(parts[1])  # Assuming the second item is the metric value
+                    steps.append(step)
+                    values.append(value)
+    except FileNotFoundError:
+        print("not Kvalue logged metric")
+        steps = [0]
+        values = [0]
 
     return steps, values
 
-def plot_learning_curve_from_mlflow(experiment_dir, experiment_id, run_id, metric, target_length, loss_terms=None, title='Learning Curve'):
+def plot_learning_curve_from_mlflow(experiment_dir, experiment_id, run_id, target_length, metrics=None, loss_terms=None, title='Learning Curve'):
 
     # Split the run name into lines if it's too long
     max_title_length = 100  # Maximum characters per line
     split_run_name = [run_name[i:i + max_title_length] for i in range(0, len(run_name), max_title_length)]
     title = "\n".join(split_run_name)  # Join lines with line breaks
 
-
     #plt.plot(steps, metric_values, marker='o', linestyle='-', label=metric.capitalize())
 
     if loss_terms:
+        # Create the learning curve plot for the specified metric
+        plt.figure(figsize=(10, 6))
+
         for loss_term in loss_terms:
-            # Create the learning curve plot for the specified metric
-            plt.figure(figsize=(10, 6))
+
             # Load and plot the loss term data
             loss_steps_org, loss_values_org = load_metrics(experiment_dir, experiment_id, run_id, loss_term)
 
-            if len(loss_steps_org)==40000: # Finished training
-                # Resample the data to reduce the number of points
-                loss_steps_r, loss_values_r = resample_data(loss_steps_org, loss_values_org, target_length)
+            #if len(loss_steps_org)==40000: # Finished training
+            # Resample the data to reduce the number of points
+            loss_steps_r, loss_values_r = resample_data(loss_steps_org, loss_values_org, target_length)
 
-                plt.plot(loss_steps_r, loss_values_r, marker='', linestyle='-', label=loss_term)
+            plt.plot(loss_steps_r, loss_values_r, marker='', linestyle='-', label=loss_term)
 
-                plt.title(title)
-                plt.xlabel('Iteration/Epoch')
-                #plt.ylabel(metric.capitalize())
-                # plt.grid(True)
-                plt.legend()
-                plt.show()
+        if metrics:
+            for metric in metrics:
+                metric_steps_org, metric_values_org = load_metrics(experiment_dir, experiment_id, run_id, metric)
+                plt.plot(metric_steps_org, metric_values_org, marker='', linestyle='-', label=metric)
+
+        plt.title(title)
+        plt.xlabel('Iteration/Epoch')
+        #plt.ylabel(metric.capitalize())
+        # plt.grid(True)
+        plt.legend()
+        plt.show()
 
 # Replace '12' with your experiment ID and 'Your_Run_Name' with the actual run name.
-experiment_id = '14'
+experiment_id = '18'
 # Specify the experiment directory
 experiment_dir = os.path.join("Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output/mlruns/", experiment_id)  # Update this to your experiment directory path
 #run_name = 'Your_Run_Name'
 metrics_to_plot = ['K_value']  # Add other metrics if needed
-#loss_terms_to_plot = ['D/loss', 'G/loss']  # Add loss terms to plot
-loss_terms_to_plot = ['G/loss']  # Add loss terms to plot
-target_length = 100
+loss_terms_to_plot = ['D/loss', 'G/loss']  # Add loss terms to plot
+#loss_terms_to_plot = ['G/loss']  # Add loss terms to plot
+target_length = 2500
 
 run_ids_list = os.listdir(experiment_dir)
+
+# Create a dictionary to store run names and their corresponding run IDs
+run_name_to_ids = {}
 
 for run_id in run_ids_list:
     if run_id != "meta.yaml":
         run_name = get_run_name(experiment_dir, experiment_id, run_id)
-        #if "topk_False" in run_name:
-        #    plot_learning_curve_from_mlflow(experiment_dir, experiment_id, run_id, metrics_to_plot, loss_terms_to_plot, run_name, target_length)
-        run_name = get_run_name(experiment_dir, experiment_id, run_id)
-        plot_learning_curve_from_mlflow(experiment_dir=experiment_dir,
-                                        experiment_id=experiment_id,
-                                        run_id=run_id,
-                                        metric=metrics_to_plot,
-                                        target_length=target_length,
-                                        loss_terms=loss_terms_to_plot,
-                                        title=run_name)
+
+        if "topk_False" in run_name:
+            plot_learning_curve_from_mlflow(experiment_dir=experiment_dir,
+                                            experiment_id=experiment_id,
+                                            run_id=run_id,
+                                            metrics=None,
+                                            target_length=target_length,
+                                            loss_terms=loss_terms_to_plot,
+                                            title=run_name)
+        elif "topk_True" in run_name:
+            plot_learning_curve_from_mlflow(experiment_dir=experiment_dir,
+                                            experiment_id=experiment_id,
+                                            run_id=run_id,
+                                            metrics=metrics_to_plot,
+                                            target_length=target_length,
+                                            loss_terms=loss_terms_to_plot,
+                                            title=run_name)
 
         print(run_name)
