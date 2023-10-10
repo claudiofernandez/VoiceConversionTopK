@@ -17,7 +17,7 @@ def main(config):
     # Create needed directories
     if config.where_exec == "slurm":
         config.gnrl_data_dir = '/workspace/NASFolder'
-        output_directory = os.path.join(config.gnrl_data_dir, "output")
+        output_directory = os.path.join(config.gnrl_data_dir, "output_smaller")
     elif config.where_exec == "local":
         config.gnrl_data_dir = "E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/"
         output_directory = os.path.join("./output")
@@ -131,10 +131,10 @@ if __name__ == '__main__':
     parser.add_argument('--sampling_rate', type=int, default=16000, help='sampling rate')
 
     # Training configuration.
-    parser.add_argument('--mlflow_experiment_name', type=str, default="[27_09_2023]_TopK", help='Name for experiment in MLFlow')
+    parser.add_argument('--mlflow_experiment_name', type=str, default="[10_10_2023]_TopKv2KPASA", help='Name for experiment in MLFlow')
     parser.add_argument('--preload_data', default=True, type=lambda x: (str(x).lower() == 'true'), help="Load data on RAM memory.")
     parser.add_argument('--batch_size', type=int, default=32, help='mini-batch size')
-    parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations for training D')
+    parser.add_argument('--num_iters', type=int, default=10000, help='number of total iterations for training D')
     parser.add_argument('--num_iters_decay', type=int, default=100000, help='number of iterations for decaying lr')
     parser.add_argument('--g_lr', type=float, default=0.0002, help='learning rate for G')
     parser.add_argument('--d_lr', type=float, default=0.0001, help='learning rate for D')
@@ -158,7 +158,7 @@ if __name__ == '__main__':
 
     # Step size.
     parser.add_argument('--log_step', type=int, default=100) #10
-    parser.add_argument('--sample_step', type=int, default=10000) #10000
+    parser.add_argument('--sample_step', type=int, default=1000) #10000
     parser.add_argument('--model_save_step', type=int, default=10000) #10000
     parser.add_argument('--lr_update_step', type=int, default=10000)
 
