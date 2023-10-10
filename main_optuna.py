@@ -74,13 +74,13 @@ def objective(trial):
 
     # Directories.
     parser.add_argument('--gnrl_data_dir', type=str, default='.')
-    parser.add_argument('--where_exec', type=str, default='slurm', help="slurm or local")  # "slurm", "local"
+    parser.add_argument('--where_exec', type=str, default='local', help="slurm or local")  # "slurm", "local"
     parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
                         default=['p262', 'p272', 'p229', 'p232'])
 
     # Step size.
-    parser.add_argument('--log_step', type=int, default=100)  # 10
-    parser.add_argument('--sample_step', type=int, default=1)  # 10000
+    parser.add_argument('--log_step', type=int, default=100) # 10
+    parser.add_argument('--sample_step', type=int, default=10000)  # 10000
     parser.add_argument('--model_save_step', type=int, default=10000)  # 10000
     parser.add_argument('--lr_update_step', type=int, default=lr_update_step)
 
