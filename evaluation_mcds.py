@@ -165,7 +165,8 @@ def main(config):
 if __name__ == '__main__':
 
     # Folder storing the samples from the
-    experiment_folder = "Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output/samples/[5_10_2023]_TopK_v1"
+    #experiment_folder = "Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output/samples/[5_10_2023]_TopK_v1"
+    experiment_folder = "./converted/[8_10_2023]_TopK_v1"
 
     runs_folders = os.listdir(experiment_folder)
 
