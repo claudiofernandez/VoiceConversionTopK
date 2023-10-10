@@ -8,6 +8,8 @@ from tqdm import tqdm
 from utils import *
 # from mosnet import CNN_BLSTM
 # import mosnet_utils
+from natsort import natsorted
+
 
 #import matplotlib.pyplot as plt
 
@@ -116,6 +118,14 @@ def main(config):
     # Get run name
     run_name = config.converted_samples_data_dir.split("/")[-1]
 
+    # Get experiment name
+    experiment_name = config.experiment_folder.split("/")[-1]
+
+    # Folder where evaluation metrics will be stored
+    evaluation_results_dir = "./evaluation_results"
+    os.makedirs(evaluation_results_dir, exist_ok=True)
+    os.makedirs(os.path.join(evaluation_results_dir, experiment_name), exist_ok=True)
+
     # Get original data directory
     original_wavs_dir = os.path.join(config.gnrl_data_dir, "data/wav16") #)"data/mcs"
     original_wavs_files_dict = get_wavfiles_dict(speakers_list=config.speakers, parent_directory=original_wavs_dir)
@@ -158,8 +168,13 @@ def main(config):
         metrics_dict[iters_key] = metrics_iteration_n_dict
     print("hola")
 
+    # Sort n_iterations keys naturally
+    sorted_keys = natsorted(metrics_dict.keys())
+    # Create a new ordered dictionary using the sorted keys
+    metrics_dict = dict((key, metrics_dict[key]) for key in sorted_keys)
+
     # Specify the CSV file path
-    csv_file = 'metrics.csv'
+    csv_file = os.path.join(evaluation_results_dir, experiment_name, run_name.split("\\")[-1][:len(run_name.split("\\")[-1])//2] + '_metrics.csv')
 
     # Open the CSV file in write mode
     with open(csv_file, 'w', newline='') as csvfile:
@@ -176,13 +191,13 @@ def main(config):
                 row = [iteration, conversion, value1, value2]
                 csv_writer.writerow(row)
 
-    # Sort the keys numerically
-    for vcto_conversion in metrics_dict.keys():
-        metrics_dict_vcto_sorted_keys = sorted(metrics_dict[vcto_conversion].keys(), key=lambda x: "{:0>10}".format(x)) # sort keys numerically naturally
-        metrics_dict[vcto_conversion] = {key: metrics_dict[vcto_conversion][key] for key in metrics_dict_vcto_sorted_keys}
+    # # Sort the keys numerically
+    # for vcto_conversion in metrics_dict.keys():
+    #     metrics_dict_vcto_sorted_keys = sorted(metrics_dict[vcto_conversion].keys(), key=lambda x: "{:0>10}".format(x)) # sort keys numerically naturally
+    #     metrics_dict[vcto_conversion] = {key: metrics_dict[vcto_conversion][key] for key in metrics_dict_vcto_sorted_keys}
 
     # Plot the metrics in a bar diagram
-    plot_metrics_dict(metrics_dict, title=run_name, show_plot=True)
+    # plot_metrics_dict(metrics_dict, title=run_name, show_plot=True)
     print("hola")
 
     # Convereted da
@@ -193,7 +208,7 @@ if __name__ == '__main__':
 
     # Folder storing the samples from the
     #experiment_folder = "Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output/samples/[5_10_2023]_TopK_v1"
-    experiment_folder = "./converted/[8_10_2023]_TopK_v1"
+    experiment_folder = "./converted/[9_10_2023]_TopK_v1"
 
     runs_folders = os.listdir(experiment_folder)
 
@@ -203,6 +218,7 @@ if __name__ == '__main__':
 
         # Directories.
         parser.add_argument('--gnrl_data_dir', type=str, default='.')
+        parser.add_argument('--experiment_folder', type=str, default='./converted/[8_10_2023]_TopK_v1')
         parser.add_argument('--converted_samples_data_dir', type=str, default=os.path.join(experiment_folder, run_folder))
         parser.add_argument('--where_exec', type=str, default='local', help="slurm or local") # "slurm", "local"
         parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
