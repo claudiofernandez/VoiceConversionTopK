@@ -209,10 +209,10 @@ if __name__ == '__main__':
                         default=['p262', 'p272', 'p229', 'p232', 'p292', 'p293', 'p360', 'p361', 'p248', 'p251'])
     # Directories.
     parser.add_argument('--models_save_dir', type=str, default='Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output/models/', help='Path to model save directory.')
-    parser.add_argument('--experiment_name', type=str, default='[8_10_2023]_TopK_v1', help='Experiment name.')
+    parser.add_argument('--experiment_name', type=str, default='[8_10_2023]_TopK_v2', help='Experiment name.')
     parser.add_argument('--convert_dir', type=str, default='./converted', help='Path to converted wavs directory.')
 
-    parser.add_argument('--sampling_rate', type=int, default=22050, help='Sampling rate for converted wavs.')
+    parser.add_argument('--sampling_rate', type=int, default=16000, help='Sampling rate for converted wavs.')
 
     config = parser.parse_args()
 
