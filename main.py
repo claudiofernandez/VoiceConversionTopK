@@ -18,7 +18,6 @@ def set_seed(seed):
 def str2bool(v):
     return v.lower() in 'true'
 
-
 def main(config):
     # Set seeds for reproducibility
     set_seed(45)
@@ -27,7 +26,7 @@ def main(config):
     # Create needed directories
     if config.where_exec == "slurm":
         config.gnrl_data_dir = '/workspace/NASFolder'
-        output_directory = os.path.join(config.gnrl_data_dir, "output_smaller")
+        output_directory = os.path.join(config.gnrl_data_dir, "output_final")
     elif config.where_exec == "local":
         config.gnrl_data_dir = "E:/TFM_EN_ESTE_DISCO_DURO/TFM_project/"
         output_directory = os.path.join("./output")
@@ -144,7 +143,7 @@ if __name__ == '__main__':
     parser.add_argument('--mlflow_experiment_name', type=str, default="[10_10_2023]_TopKv2KPASA", help='Name for experiment in MLFlow')
     parser.add_argument('--preload_data', default=True, type=lambda x: (str(x).lower() == 'true'), help="Load data on RAM memory.")
     parser.add_argument('--batch_size', type=int, default=32, help='mini-batch size')
-    parser.add_argument('--num_iters', type=int, default=100000, help='number of total iterations for training D')
+    parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations for training D')
     parser.add_argument('--num_iters_decay', type=int, default=50000, help='number of iterations for decaying lr')
     parser.add_argument('--g_lr', type=float, default=0.0002, help='learning rate for G')
     parser.add_argument('--d_lr', type=float, default=0.0001, help='learning rate for D')
@@ -167,7 +166,7 @@ if __name__ == '__main__':
                         default= ['p262', 'p272', 'p229', 'p232', 'p292', 'p293', 'p360', 'p361', 'p248', 'p251'])
 
     # Step size.
-    parser.add_argument('--log_step', type=int, default=1000) #10
+    parser.add_argument('--log_step', type=int, default=5000) #10
     parser.add_argument('--sample_step', type=int, default=10000) #10000
     parser.add_argument('--model_save_step', type=int, default=10000) #10000
     parser.add_argument('--lr_update_step', type=int, default=10000)
