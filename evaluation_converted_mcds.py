@@ -208,7 +208,7 @@ if __name__ == '__main__':
 
     # Folder storing the samples from the
     #experiment_folder = "Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output/samples/[5_10_2023]_TopK_v1"
-    experiment_folder = "./converted/[9_10_2023]_TopK_v1"
+    experiment_folder = "./converted/[13_10_2023]_TopKv2_FINALEXP"
 
     runs_folders = os.listdir(experiment_folder)
 
@@ -218,7 +218,7 @@ if __name__ == '__main__':
 
         # Directories.
         parser.add_argument('--gnrl_data_dir', type=str, default='.')
-        parser.add_argument('--experiment_folder', type=str, default='./converted/[8_10_2023]_TopK_v1')
+        parser.add_argument('--experiment_folder', type=str, default=experiment_folder)
         parser.add_argument('--converted_samples_data_dir', type=str, default=os.path.join(experiment_folder, run_folder))
         parser.add_argument('--where_exec', type=str, default='local', help="slurm or local") # "slurm", "local"
         parser.add_argument('--speakers', type=str, nargs='+', required=False, help='Speaker dir names.',
