@@ -112,12 +112,13 @@ def load_metrics(experiment_dir, experiment_id, run_id, metric_name):
 
     return steps, values
 
-def plot_learning_curve_from_mlflow(experiment_dir, experiment_id, run_id, target_length, metrics=None, loss_terms=None, title='Learning Curve'):
-
+def plot_learning_curve_from_mlflow(experiment_dir, experiment_id, run_id, target_length, figures_save_dir, metrics=None, loss_terms=None, title='Learning Curve'):
+    os.makedirs(os.path.join(figures_save_dir), exist_ok=True)
+    
     # Split the run name into lines if it's too long
     max_title_length = 100  # Maximum characters per line
     split_run_name = [run_name[i:i + max_title_length] for i in range(0, len(run_name), max_title_length)]
-    title = "\n".join(split_run_name)  # Join lines with line breaks
+    #title = "\n".join(split_run_name)  # Join lines with line breaks
 
     #plt.plot(steps, metric_values, marker='o', linestyle='-', label=metric.capitalize())
 
@@ -141,22 +142,32 @@ def plot_learning_curve_from_mlflow(experiment_dir, experiment_id, run_id, targe
                 metric_steps_org, metric_values_org = load_metrics(experiment_dir, experiment_id, run_id, metric)
                 plt.plot(metric_steps_org, metric_values_org, marker='', linestyle='-', label=metric)
 
+        #title = "StarGAN-VC Training Losses"
         plt.title(title)
-        plt.xlabel('Iteration/Epoch')
+        plt.xlabel('Iteration')
         #plt.ylabel(metric.capitalize())
-        # plt.grid(True)
+        plt.grid(True)
         plt.legend()
+
+
+        os.makedirs(os.path.join(figures_save_dir, "losses"), exist_ok=True)
+        plt.savefig(os.path.join(figures_save_dir, "losses", run_name + ".png"))
+
         plt.show()
 
+        print("hola")
+
 # Replace '12' with your experiment ID and 'Your_Run_Name' with the actual run name.
-experiment_id = '18'
+experiment_id = '1'
+
 # Specify the experiment directory
-experiment_dir = os.path.join("Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output/mlruns/", experiment_id)  # Update this to your experiment directory path
+experiment_dir = os.path.join("Z:/Shared_PFC-TFG-TFM/Claudio/TOPK_VC/output_final/mlruns/", experiment_id)  # Update this to your experiment directory path
 #run_name = 'Your_Run_Name'
 metrics_to_plot = ['K_value']  # Add other metrics if needed
-loss_terms_to_plot = ['D/loss', 'G/loss']  # Add loss terms to plot
 #loss_terms_to_plot = ['G/loss']  # Add loss terms to plot
-target_length = 2500
+loss_terms_to_plot = ['G/loss']  # Add loss terms to plot
+#loss_terms_to_plot = ['D/loss_fake', 'D/loss_']  # Add loss terms to plot
+target_length = 500
 
 run_ids_list = os.listdir(experiment_dir)
 
@@ -167,6 +178,18 @@ for run_id in run_ids_list:
     if run_id != "meta.yaml":
         run_name = get_run_name(experiment_dir, experiment_id, run_id)
 
+        if "sgv_v1" in run_name:
+            sgv = "StarGAN-VC"
+            topk_g = run_name.split("topk_g_")[-1].split("_")[0]
+            topk_v = run_name.split("topk_v_")[-1].split("_")[0]
+            topk_fi = run_name.split("topk_fi_")[-1].split("_")[0]
+
+        elif "sgv_v2" in run_name:
+            sgv = "StarGAN-VCv2"
+            topk_g = run_name.split("topk_g_")[-1].split("_")[0]
+            topk_v = run_name.split("topk_v_")[-1].split("_")[0]
+            topk_fi = run_name.split("topk_fi_")[-1].split("_")[0]
+
         if "topk_False" in run_name:
             plot_learning_curve_from_mlflow(experiment_dir=experiment_dir,
                                             experiment_id=experiment_id,
@@ -174,7 +197,8 @@ for run_id in run_ids_list:
                                             metrics=None,
                                             target_length=target_length,
                                             loss_terms=loss_terms_to_plot,
-                                            title=run_name)
+                                            title=sgv + " Training Losses",
+                                            figures_save_dir="./figures")
         elif "topk_True" in run_name:
             plot_learning_curve_from_mlflow(experiment_dir=experiment_dir,
                                             experiment_id=experiment_id,
@@ -182,6 +206,7 @@ for run_id in run_ids_list:
                                             metrics=metrics_to_plot,
                                             target_length=target_length,
                                             loss_terms=loss_terms_to_plot,
-                                            title=run_name)
+                                            title=sgv + " TopK f.i: " + topk_fi + " $\gamma$: " + topk_g +  " $v$: " + topk_v  , #+ " Training Losses",
+                                            figures_save_dir="./figures")
 
         print(run_name)
